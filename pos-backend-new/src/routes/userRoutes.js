@@ -70,4 +70,10 @@ router.get("/dashboard", protect, (req, res) => {
   });
 });
 
+router.get("/practice",(req,res)=>{
+  res.send("  Practice route is working")
+})
+
+
+
 module.exports = router;

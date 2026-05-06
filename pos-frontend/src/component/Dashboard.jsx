@@ -1,103 +1,128 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from 'recharts';
+
+const lineData = [
+  { date: '2026-04-20', orange: 0, cyan: 0 },
+  { date: '2026-04-21', orange: 0, cyan: 0 },
+  { date: '2026-04-22', orange: 0, cyan: 0 },
+  { date: '2026-04-23', orange: 0, cyan: 0 },
+  { date: '2026-04-24', orange: 0, cyan: 0 },
+  { date: '2026-04-25', orange: 3, cyan: 1 },
+  { date: '2026-04-26', orange: 0, cyan: 0 },
+];
+
+const barData = [
+  { name: 'Dynamic Programming', score: 1 },
+  { name: 'Graphs', score: 0 },
+  { name: 'Binary Search', score: 0 },
+];
 
 export default function DashboardPage() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const user = { name: "Vikash Kumar" };
 
   useEffect(() => {
-    // This function automatically runs when the user reaches /dashboard
-    const fetchDashboardData = async () => {
-      const token = localStorage.getItem('token');
-      
-      // If there's no token, instantly kick them back to login
-      if (!token) {
-        navigate('/auth');
-        return;
-      }
-
-      try {
-        // Fetch the protected backend route using the token
-        const response = await fetch('http://localhost:5001/api/users/dashboard', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        const result = await response.json();
-
-        // If the token is invalid or expired
-        if (!response.ok) {
-          throw new Error(result.message || 'Failed to authenticate dashboard data');
-        }
-
-        // Save the successful backend data into our state
-        setData(result);
-      } catch (err) {
-        setError(err.message);
-        
-        // Optionally auto-logout the user if their token was rejected
-        if (err.message.toLowerCase().includes('authorized') || err.message.toLowerCase().includes('token')) {
-            localStorage.removeItem('token');
-            navigate('/auth');
-        }
-      }
-    };
-
-    fetchDashboardData();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/auth');
+      return;
+    }
   }, [navigate]);
 
   return (
-    <div className="min-h-screen p-8 text-white bg-gradient-to-br from-[#121820] via-[#101a21] to-[#0d141e]">
-      <div className="max-w-4xl mx-auto mt-12 bg-[#161a23] p-8 rounded-xl shadow-2xl border border-[#202835]">
-        <h1 className="text-3xl font-bold text-[#40e0d0] mb-4">Protected Dashboard</h1>
+    <div className="flex h-screen bg-[#12161b] text-gray-300 font-sans overflow-hidden">
+      
+      <Sidebar />
+      
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115] p-8">
+        <h2 className="text-xl font-bold text-white mb-6 tracking-wide">Dashboard</h2>
         
-        {error ? (
-          <div className="text-red-400 p-4 bg-red-500/10 rounded">{error}</div>
-        ) : !data ? (
-          <div className="text-gray-400 font-medium animate-pulse">Loading your secure data...</div>
-        ) : (
-          <div className="animate-fadeUp">
-            <p className="text-lg text-gray-200 mb-6">{data.message}</p>
-            <div className="bg-[#242b3b] p-6 rounded-lg text-gray-300 shadow-inner">
-              <h2 className="text-xl font-semibold mb-4 text-[#40e0d0]">Your Profile Details:</h2>
-              <ul className="space-y-3">
-                <li className="flex justify-between border-b border-gray-600/30 pb-2">
-                    <strong className="text-gray-400">Name</strong> 
-                    <span className="text-white">{data.user?.name || 'N/A'}</span>
-                </li>
-                <li className="flex justify-between border-b border-gray-600/30 pb-2">
-                    <strong className="text-gray-400">Email</strong> 
-                    <span className="text-white">{data.user?.email || 'N/A'}</span>
-                </li>
-                <li className="flex justify-between border-b border-gray-600/30 pb-2">
-                    <strong className="text-gray-400">User ID</strong> 
-                    <span className="text-white">{data.user?.id || 'N/A'}</span>
-                </li>
-              </ul>
-              
-              {data.overview && (
-                 <div className="mt-6 p-4 bg-[#40e0d0]/10 border border-[#40e0d0]/30 rounded">
-                     <p className="text-sm text-[#40e0d0]">{data.overview}</p>
-                 </div>
-              )}
-            </div>
-            
-            <button 
-              className="mt-8 px-6 py-2 bg-red-500/10 border border-red-500/40 text-red-500 hover:bg-red-500/20 hover:text-red-400 rounded transition-colors font-medium"
-              onClick={() => {
-                localStorage.removeItem('token');
-                navigate('/auth');
-              }}
-            >
-              Logout Securely
-            </button>
+        {/* Top Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
+             <p className="text-[13px] text-gray-400 mb-2 font-medium">Readiness Score</p>
+             <p className="text-[34px] tracking-tight font-bold text-[#40e0d0]">82.3</p>
           </div>
-        )}
-      </div>
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
+             <p className="text-[13px] text-gray-400 mb-2 font-medium">Current Streak</p>
+             <p className="text-[34px] tracking-tight font-bold text-white">1 days</p>
+          </div>
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
+             <p className="text-[13px] text-gray-400 mb-2 font-medium">Completion Rate</p>
+             <p className="text-[34px] tracking-tight font-bold text-white">33.33%</p>
+          </div>
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
+             <p className="text-[13px] text-gray-400 mb-2 font-medium">Learning Integrity Score</p>
+             <p className="text-[34px] tracking-tight font-bold text-white">100.0</p>
+          </div>
+        </div>
+
+        {/* Weak Topics */}
+        <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 mb-4 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
+          <p className="text-[13px] font-medium text-gray-400 mb-3">Weak Topics</p>
+          <div className="flex gap-2">
+            <span className="px-3 py-1 bg-[#12161b] border border-[#222a35] rounded-full text-xs text-gray-400">Graphs</span>
+            <span className="px-3 py-1 bg-[#12161b] border border-[#222a35] rounded-full text-xs text-gray-400">Binary Search</span>
+          </div>
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          {/* Line Chart */}
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] min-h-[300px] flex flex-col">
+            <p className="text-[15px] font-semibold text-white mb-6">Weekly Progress</p>
+            <div className="flex-1 w-full relative -left-4">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={lineData} margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222a35" />
+                  <XAxis dataKey="date" tick={{fontSize: 10, fill: '#6b7280'}} tickLine={false} axisLine={{stroke: '#222a35'}} />
+                  <YAxis tick={{fontSize: 10, fill: '#6b7280'}} tickLine={false} axisLine={false} domain={[0, 3]} tickCount={5} />
+                  <Line type="monotone" dataKey="orange" stroke="#eab308" strokeWidth={2} dot={{ r: 4, fill: '#171c23', stroke: '#eab308', strokeWidth: 2 }} />
+                  <Line type="monotone" dataKey="cyan" stroke="#40e0d0" strokeWidth={2} dot={{ r: 4, fill: '#171c23', stroke: '#40e0d0', strokeWidth: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Bar Chart */}
+          <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] min-h-[300px] flex flex-col">
+            <p className="text-[15px] font-semibold text-white mb-6">Topic Strength</p>
+            <div className="flex-1 w-full relative -left-4">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={barData} barCategoryGap="20%" margin={{ top: 5, right: 20, bottom: 5, left: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222a35" />
+                  <XAxis dataKey="name" tick={{fontSize: 10, fill: '#6b7280'}} tickLine={false} axisLine={{stroke: '#222a35'}} />
+                  <YAxis tick={{fontSize: 10, fill: '#6b7280'}} tickLine={false} axisLine={false} domain={[0, 1]} tickCount={5} />
+                  <Bar dataKey="score" radius={[4, 4, 0, 0]}>
+                    {barData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.score > 0 ? '#40e0d0' : 'transparent'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Leaderboard */}
+        <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)] mb-8">
+          <p className="text-[15px] font-semibold text-white mb-4">Weekly Leaderboard</p>
+          <div className="flex justify-between items-center px-4 py-3 bg-[#12161b] border border-[#222a35] rounded-lg">
+            <div className="flex items-center text-sm">
+              <span className="text-gray-500 mr-3">#1</span>
+              <span className="text-gray-300 font-medium">{user?.name || 'Vikash Kumar'}</span>
+            </div>
+            <span className="text-sm font-semibold text-[#40e0d0]">12 pts</span>
+          </div>
+        </div>
+
+      </main>
     </div>
   );
 }

@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const app = require("./app");
 const { connectDatabase } = require("./config/db");
+require("./models"); // Initialize models and associations before sync
 
 const PORT = process.env.PORT || 5000;
 

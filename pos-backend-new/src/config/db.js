@@ -11,8 +11,8 @@ async function connectDatabase() {
     await sequelize.authenticate();
     console.log("PostgreSQL connected successfully.");
     
-    // Automatically create tables if they don't exist
-    await sequelize.sync(); 
+    // Automatically create tables or add missing columns if they don't exist
+    await sequelize.sync({ alter: true }); 
   } catch (error) {
     throw new Error("Unable to connect to the database: " + error.message);
   }

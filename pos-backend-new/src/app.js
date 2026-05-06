@@ -4,6 +4,9 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const userRoutes = require("./routes/userRoutes");
+const questionRoutes = require("./routes/questionRoutes");
+const studyPlanRoutes = require("./routes/studyPlanRoutes");
+const codeRoutes = require("./routes/codeRoutes");
 
 const app = express();
 
@@ -27,6 +30,9 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/users", userRoutes);
+app.use("/api/questions", questionRoutes);
+app.use("/api/study-plans", studyPlanRoutes);
+app.use("/api/code", codeRoutes);
 
 app.use((req, res) => {
   res.status(404).json({
@@ -43,4 +49,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
