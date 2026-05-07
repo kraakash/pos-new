@@ -11,7 +11,10 @@ const codeRoutes = require("./routes/codeRoutes");
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173", // Only allow requests from our deployed frontend or local dev
+  credentials: true
+}));
 app.use(express.json());
 app.use(morgan("dev"));
 

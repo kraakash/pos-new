@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 
-const API_BASE_URL = 'http://localhost:5001/api/questions';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/questions`;
 
 const initialForm = {
   title: '',
@@ -53,7 +53,13 @@ export default function PracticePage() {
     setError('');
 
     try {
-      const response = await fetch(API_BASE_URL);
+      const token = localStorage.getItem('token');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(API_BASE_URL, { headers });
       const data = await response.json();
 
       if (!response.ok) {
@@ -241,7 +247,14 @@ export default function PracticePage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-100">{question.title}</h3>
+                          <h3 className="text-sm font-semibold text-gray-100 flex items-center gap-2">
+                            {question.isSolved && (
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-[#40e0d0]" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            {question.title}
+                          </h3>
                           {question.category && (
                             <p className="text-xs text-gray-500 mt-2">{question.category}</p>
                           )}

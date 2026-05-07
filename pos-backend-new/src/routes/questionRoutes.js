@@ -1,19 +1,37 @@
 const express = require("express");
-const { Question } = require("../models");
-const { protect } = require("../middleware/authMiddleware");
+const { Question, UserSolvedQuestion, Submission } = require("../models");
+const { protect, optionalAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // @desc    Get all questions (for practice page)
 // @route   GET /api/questions
-// @access  Public
-router.get("/", async (req, res, next) => {
+// @access  Public (Optional Auth)
+// @details Ye route sabhi questions return karta hai. Agar user logged in hai (optionalAuth), 
+//          toh user ke solved questions match karke 'isSolved: true' attach karke bhejta hai, 
+//          jisse frontend library me green checkmark dikh sake. Guest user ko fresh list milti hai.
+router.get("/", optionalAuth, async (req, res, next) => {
   try {
     const questions = await Question.findAll();
+    let solvedQuestionIds = [];
+    
+    if (req.user) {
+      const solved = await UserSolvedQuestion.findAll({
+        where: { userId: req.user.id, status: "Solved" }
+      });
+      solvedQuestionIds = solved.map(s => s.questionId);
+    }
+
+    const data = questions.map(q => {
+      const qJson = q.toJSON();
+      qJson.isSolved = solvedQuestionIds.includes(q.id);
+      return qJson;
+    });
+
     res.json({
       message: "Questions fetched successfully",
       count: questions.length,
-      data: questions
+      data
     });
   } catch (error) {
     next(error);
@@ -22,34 +40,97 @@ router.get("/", async (req, res, next) => {
 
 // @desc    Get single question
 // @route   GET /api/questions/:id
-// @access  Public
-router.get("/:id", async (req, res, next) => {
+// @access  Public (Optional Auth)
+// @details Ye route specific question return karta hai. Agar user logged in hai,
+//          toh backend database me check karta hai ki us user ne ye question pehle solve kiya hai ya nahi,
+//          aur 'isSolved' property uske status ke according add karke bhejega.
+router.get("/:id", optionalAuth, async (req, res, next) => {
   try {
     const question = await Question.findByPk(req.params.id);
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
     }
-    res.json({ data: question });
+    
+    const qJson = question.toJSON();
+    qJson.isSolved = false;
+
+    if (req.user) {
+      const solved = await UserSolvedQuestion.findOne({
+        where: { userId: req.user.id, questionId: question.id, status: "Solved" }
+      });
+      if (solved) {
+        qJson.isSolved = true;
+      }
+    }
+
+    res.json({ 
+      message: "Question fetched successfully",
+      data: qJson 
+    });
   } catch (error) {
     next(error);
   }
 });
 
-// @desc    Get one question
-// @route   GET /api/questions/:id
-// @access  Public
-router.get("/:id", async (req, res, next) => {
+// @desc    Submit code and save to history (and mark solved if Accepted)
+// @route   POST /api/questions/:id/submit
+// @access  Private
+// @details Ye API user ke code, language aur status ko database (Submission table) me hamesha ke liye save karti hai.
+//          Sath hi agar status "Accepted" (isCorrect) hai, toh ye UserSolvedQuestion me bhi progress mark kar deti hai.
+router.post("/:id/submit", protect, async (req, res, next) => {
   try {
-    const question = await Question.findByPk(req.params.id);
+    const questionId = req.params.id;
+    const userId = req.user.id;
+    const { code, language, status } = req.body;
 
+    const question = await Question.findByPk(questionId);
     if (!question) {
       return res.status(404).json({ message: "Question not found" });
     }
 
-    res.json({
-      message: "Question fetched successfully",
-      data: question
+    // 1. Save the code submission in history
+    const submission = await Submission.create({
+      userId,
+      questionId,
+      code,
+      language,
+      status
     });
+
+    // 2. If it is an Accepted solution, also update their progress
+    if (status === "Accepted") {
+      const [userSolved, created] = await UserSolvedQuestion.findOrCreate({
+        where: { userId, questionId },
+        defaults: { status: "Solved" }
+      });
+
+      if (!created && userSolved.status !== "Solved") {
+        userSolved.status = "Solved";
+        await userSolved.save();
+      }
+    }
+
+    res.json({ message: "Submission recorded successfully", data: submission });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Get all past submissions for a user on a specific question
+// @route   GET /api/questions/:id/submissions
+// @access  Private
+// @details Frontend ke "Submissions" tab me past code list karne ke liye ye saari submissions return karta hai (newest first).
+router.get("/:id/submissions", protect, async (req, res, next) => {
+  try {
+    const questionId = req.params.id;
+    const userId = req.user.id;
+
+    const submissions = await Submission.findAll({
+      where: { userId, questionId },
+      order: [['createdAt', 'DESC']] // Latest top pe
+    });
+
+    res.json({ message: "Submissions fetched", data: submissions });
   } catch (error) {
     next(error);
   }

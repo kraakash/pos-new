@@ -1,19 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 
 const Roadmap = () => {
-  // Yeh temporary state data hai. Baad mein isko aapke backend API /api/study-plans se replace karenge.
-  const [ongoingPlans] = useState([
-    { id: 1, title: 'SQL 50', total: 50, completed: 5, colorStart: '#0284c7', colorEnd: '#06b6d4', icon: 'SQL' },
-    { id: 2, title: 'Top Interview 150', total: 150, completed: 0, colorStart: '#047857', colorEnd: '#10b981', icon: 'TOP' }
-  ]);
+  const [ongoingPlans, setOngoingPlans] = useState([]);
+  const [featuredPlans, setFeaturedPlans] = useState([]);
 
-  const [featuredPlans] = useState([
-    { id: 3, title: 'LeetCode 75', desc: 'Ace Coding Interview with 75 Qs', colorStart: '#1d4ed8', colorEnd: '#3b82f6', icon: '🎯' },
-    { id: 2, title: 'Top Interview 150', desc: 'Must-do List for Interview Prep', colorStart: '#0f766e', colorEnd: '#14b8a6', icon: '💬' },
-    { id: 4, title: 'Binary Search', desc: '8 Patterns, 42 Qs = Master BS', colorStart: '#6d28d9', colorEnd: '#a855f7', icon: '🌪️' },
-    { id: 1, title: 'SQL 50', desc: 'Crack SQL Interview in 50 Qs', colorStart: '#0369a1', colorEnd: '#0ea5e9', icon: '☁️' }
-  ]);
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/study-plans`, { headers });
+        const data = await response.json();
+        if (response.ok && data.data) {
+          // Map backend data to frontend format
+          const mappedPlans = data.data.map(p => ({
+            id: p.id,
+            title: p.title,
+            desc: p.description,
+            total: p.totalQuestions || 0,
+            completed: p.completed || 0,
+            colorStart: p.themeStartColor || '#1d4ed8',
+            colorEnd: p.themeEndColor || '#3b82f6',
+            icon: p.title.includes('SQL') ? '☁️' : p.title.includes('Interview') ? '💬' : p.title.includes('Binary Search') ? '🌪️' : '🎯',
+            isFeatured: p.isFeatured
+          }));
+          
+          setFeaturedPlans(mappedPlans.filter(p => p.isFeatured));
+          setOngoingPlans(mappedPlans.filter(p => p.completed > 0));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#12161b] text-gray-300 font-sans overflow-hidden">
@@ -28,38 +52,40 @@ const Roadmap = () => {
         </div>
 
         {/* Ongoing Section */}
-        <div className="mb-12">
-          <h2 className="text-xl font-semibold mb-4 text-white">Ongoing</h2>
-          <div className="flex flex-wrap gap-4">
-            {ongoingPlans.map(plan => (
-              <div key={`ongoing-${plan.id}`} className="bg-[#2a2a2a] p-4 rounded-xl w-full md:w-80 flex items-center gap-4 shadow-lg border border-gray-800 hover:border-gray-600 transition-colors cursor-pointer">
-                <div 
-                  className="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner"
-                  style={{ background: `linear-gradient(135deg, ${plan.colorStart}, ${plan.colorEnd})` }}
-                >
-                  {plan.icon}
-                </div>
-                
-                <div className="flex-1">
-                  <h3 className="font-medium text-sm text-gray-200">{plan.title}</h3>
-                  <div className="mt-2 h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all duration-1000 ease-out" 
-                      style={{ 
-                        width: `${plan.total > 0 ? (plan.completed / plan.total) * 100 : 0}%`,
-                        background: `linear-gradient(90deg, ${plan.colorStart}, ${plan.colorEnd})`
-                      }}
-                    ></div>
+        {ongoingPlans.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-xl font-semibold mb-4 text-white">Ongoing</h2>
+            <div className="flex flex-wrap gap-4">
+              {ongoingPlans.map(plan => (
+                <div key={`ongoing-${plan.id}`} className="bg-[#2a2a2a] p-4 rounded-xl w-full md:w-80 flex items-center gap-4 shadow-lg border border-gray-800 hover:border-gray-600 transition-colors cursor-pointer">
+                  <div 
+                    className="w-14 h-14 rounded-xl flex items-center justify-center font-bold text-lg shadow-inner"
+                    style={{ background: `linear-gradient(135deg, ${plan.colorStart}, ${plan.colorEnd})` }}
+                  >
+                    {plan.icon}
                   </div>
-                  <div className="text-xs text-gray-400 mt-1.5 flex justify-between font-medium">
-                    <span>Total Progress</span>
-                    <span>{plan.completed} / {plan.total}</span>
+                  
+                  <div className="flex-1">
+                    <h3 className="font-medium text-sm text-gray-200">{plan.title}</h3>
+                    <div className="mt-2 h-1.5 w-full bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-1000 ease-out" 
+                        style={{ 
+                          width: `${plan.total > 0 ? (plan.completed / plan.total) * 100 : 0}%`,
+                          background: `linear-gradient(90deg, ${plan.colorStart}, ${plan.colorEnd})`
+                        }}
+                      ></div>
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1.5 flex justify-between font-medium">
+                      <span>Total Progress</span>
+                      <span>{plan.completed} / {plan.total}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Featured Section */}
         <div>

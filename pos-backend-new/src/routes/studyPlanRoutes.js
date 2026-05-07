@@ -1,13 +1,17 @@
 const express = require("express");
-const { StudyPlan, Question } = require("../models");
-const { protect } = require("../middleware/authMiddleware");
+const { StudyPlan, Question, UserSolvedQuestion } = require("../models");
+const { protect, optionalAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 // @desc    Get all study plans (Featured)
 // @route   GET /api/study-plans
-// @access  Private
-router.get("/", protect, async (req, res, next) => {
+// @access  Public (Optional Auth)
+// @details Ye route study plans (series) return karta hai. 
+//          Isme hum calculate karte hain ki specific study plan me total kitne questions hain. 
+//          Agar user logged in hai, toh ye bhi calculate karke bhejte hain ki usne is series ke andar 
+//          kitne questions already solve (completed) kar liye hain, jisse progress bar sahi show ho.
+router.get("/", optionalAuth, async (req, res, next) => {
   try {
     const plans = await StudyPlan.findAll({
       include: [{
@@ -17,10 +21,23 @@ router.get("/", protect, async (req, res, next) => {
       }]
     });
     
+    // Get user solved questions if logged in
+    let solvedQuestionIds = [];
+    if (req.user) {
+      const solved = await UserSolvedQuestion.findAll({
+        where: { userId: req.user.id, status: "Solved" }
+      });
+      solvedQuestionIds = solved.map(s => s.questionId);
+    }
+    
     // Format response to include totalQuestions count without sending whole array
     const formattedPlans = plans.map(plan => {
       const planJson = plan.toJSON();
       planJson.totalQuestions = planJson.Questions ? planJson.Questions.length : 0;
+      
+      const planQuestionIds = planJson.Questions ? planJson.Questions.map(q => q.id) : [];
+      planJson.completed = planQuestionIds.filter(id => solvedQuestionIds.includes(id)).length;
+
       delete planJson.Questions; 
       return planJson;
     });

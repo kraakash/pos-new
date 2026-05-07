@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 
-const API_BASE_URL = 'http://localhost:5001/api/questions'; // Make sure port matches
-const CODE_API_URL = 'http://localhost:5001/api/code/run';
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/questions`;
+const CODE_API_URL = `${import.meta.env.VITE_API_BASE_URL}/code/run`;
 
 export default function QuestionDetail() {
   const { id } = useParams();
@@ -17,11 +17,18 @@ export default function QuestionDetail() {
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState(null);
   const [runError, setRunError] = useState('');
+  const [submissions, setSubmissions] = useState([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
   useEffect(() => {
     const fetchQuestion = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/${id}`);
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        const response = await fetch(`${API_BASE_URL}/${id}`, { headers });
         const data = await response.json();
         setQuestion(data.data);
       } catch {
@@ -36,6 +43,30 @@ export default function QuestionDetail() {
   const getActiveInput = () => {
     return question?.examples?.[activeTestCase]?.input || '';
   };
+
+  // Fetch submissions when the submissions tab is active
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      if (activeTab === 'submissions') {
+        setLoadingSubmissions(true);
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${API_BASE_URL}/${id}/submissions`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          });
+          const data = await response.json();
+          if (response.ok) {
+            setSubmissions(data.data || []);
+          }
+        } catch (err) {
+          console.error("Failed to load submissions", err);
+        } finally {
+          setLoadingSubmissions(false);
+        }
+      }
+    };
+    fetchSubmissions();
+  }, [activeTab, id]);
 
   // ==========================================
   // FUNCTION: handleRunCode
@@ -88,6 +119,98 @@ export default function QuestionDetail() {
     }
   };
 
+  const handleSubmitSolution = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setRunError('Please login first to submit code.');
+      setConsoleTab('output');
+      return;
+    }
+
+    setIsRunning(true);
+    setRunError('');
+    setRunResult(null);
+    setConsoleTab('output');
+
+    try {
+      // 1. Run the code
+      const response = await fetch(CODE_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          questionId: question.id,
+          language,
+          code,
+          input: getActiveInput(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Code run failed.');
+      }
+
+      setRunResult(data.data);
+
+      // 2. Validate against expected output
+      const expectedOutput = question.examples?.[activeTestCase]?.output;
+      let isCorrect = false;
+
+      // If there's an execution error (stderr), it's already "Runtime Error". We only validate if "Accepted".
+      if (data.data.status.description === 'Accepted') {
+        const actualOutput = data.data.stdout ? data.data.stdout.trim() : "";
+        if (!expectedOutput) {
+          data.data.status.description = 'No Expected Output Provided';
+          isCorrect = false;
+        } else if (actualOutput !== expectedOutput.trim()) {
+          data.data.status.description = 'Wrong Answer';
+          isCorrect = false;
+        } else {
+          isCorrect = true;
+        }
+      }
+
+      setRunResult(data.data);
+
+      // 3. Always save the submission in history
+      const submitRes = await fetch(`${API_BASE_URL}/${question.id}/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          code,
+          language,
+          status: data.data.status.description
+        })
+      });
+
+      if (submitRes.ok && isCorrect) {
+        setQuestion(prev => ({ ...prev, isSolved: true }));
+      }
+      
+      // Refresh submissions if we are on that tab
+      if (activeTab === 'submissions') {
+        const fetchSubmissions = async () => {
+          const response = await fetch(`${API_BASE_URL}/${id}/submissions`, { headers: { 'Authorization': `Bearer ${token}` } });
+          const json = await response.json();
+          if (response.ok) setSubmissions(json.data || []);
+        };
+        fetchSubmissions();
+      }
+
+    } catch (err) {
+      setRunError(err.message);
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
   if (loading) return <div className="h-screen bg-[#12161b] text-[#40e0d0] flex items-center justify-center font-sans">Loading workspace...</div>;
   if (!question) return <div className="h-screen bg-[#12161b] text-white flex items-center justify-center font-sans">Problem not found</div>;
 
@@ -120,8 +243,11 @@ export default function QuestionDetail() {
             </svg>
             {isRunning ? 'Running...' : 'Run Code'}
           </button>
-          <button className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg bg-[#40e0d0] text-black shadow-[0_0_15px_rgba(64,224,208,0.3)] hover:bg-[#3bc7b9] hover:shadow-[0_0_20px_rgba(64,224,208,0.5)] transition-all">
-            Submit Solution
+          <button 
+            onClick={handleSubmitSolution}
+            disabled={isRunning}
+            className="flex items-center gap-2 px-6 py-2 text-sm font-bold rounded-lg bg-[#40e0d0] text-black shadow-[0_0_15px_rgba(64,224,208,0.3)] hover:bg-[#3bc7b9] hover:shadow-[0_0_20px_rgba(64,224,208,0.5)] transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+            {isRunning ? 'Submitting...' : 'Submit Solution'}
           </button>
         </div>
       </header>
@@ -153,7 +279,14 @@ export default function QuestionDetail() {
               <div className="space-y-8">
                 {/* Header Info */}
                 <div>
-                  <h1 className="text-3xl font-bold text-white mb-4 tracking-tight">{question.id}. {question.title}</h1>
+                  <h1 className="text-3xl font-bold text-white mb-4 tracking-tight flex items-center gap-3">
+                    {question.isSolved && (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-[#40e0d0]" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {question.id}. {question.title}
+                  </h1>
                   <div className="flex items-center gap-3">
                     <span className={`px-4 py-1.5 rounded-full text-xs font-bold border ${question.difficulty === 'Easy' ? 'text-emerald-400 bg-emerald-400/5 border-emerald-400/20' :
                         question.difficulty === 'Medium' ? 'text-yellow-400 bg-yellow-400/5 border-yellow-400/20' :
@@ -232,7 +365,53 @@ export default function QuestionDetail() {
               </div>
             )}
 
-            {activeTab !== 'problem' && (
+            {activeTab === 'submissions' && (
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-white mb-6">Submission History</h3>
+                {loadingSubmissions ? (
+                  <div className="text-gray-500 text-center mt-10">Loading submissions...</div>
+                ) : submissions.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+                    <p>No submissions yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {submissions.map((sub) => (
+                      <div 
+                        key={sub.id} 
+                        onClick={() => {
+                          setCode(sub.code);
+                          setLanguage(sub.language);
+                        }}
+                        className="bg-[#12161b] rounded-xl border border-[#222a35] p-4 flex justify-between items-center cursor-pointer hover:border-[#40e0d0]/50 transition-colors group"
+                      >
+                        <div className="flex flex-col">
+                          <span className={`font-bold text-lg ${
+                            sub.status === 'Accepted' ? 'text-emerald-400' :
+                            sub.status === 'Wrong Answer' ? 'text-red-400' : 'text-yellow-400'
+                          }`}>
+                            {sub.status}
+                          </span>
+                          <span className="text-sm text-gray-500 mt-1">
+                            {new Date(sub.createdAt).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="px-3 py-1 rounded-full bg-[#1a212b] border border-[#2a3441] text-xs font-mono text-gray-300">
+                            {sub.language}
+                          </span>
+                          <span className="text-[#40e0d0] text-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                            View Code &rarr;
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab !== 'problem' && activeTab !== 'submissions' && (
               <div className="flex flex-col items-center justify-center h-full text-gray-500">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
