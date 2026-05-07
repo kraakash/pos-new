@@ -10,7 +10,7 @@ async function seed() {
       //   { title: "Top Interview 150", description: "Must-do List for Interview Prep", themeStartColor: "#047857", themeEndColor: "#10b981", isFeatured: true },
       //   { title: "LeetCode 75", description: "Ace Coding Interview with 75 Qs", themeStartColor: "#1d4ed8", themeEndColor: "#3b82f6", isFeatured: true },
       //   { title: "Binary Search", description: "8 Patterns, 42 Qs = Master BS", themeStartColor: "#6d28d9", themeEndColor: "#a855f7", isFeatured: true }
-      // ]);
+      // ])
       console.log("Study plans seeded successfully!");
     } else {
       console.log("Study plans already exist.");

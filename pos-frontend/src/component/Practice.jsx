@@ -24,10 +24,7 @@ export default function PracticePage() {
   const [questions, setQuestions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   const stats = useMemo(() => {
     const total = questions.length;
@@ -79,48 +76,7 @@ export default function PracticePage() {
     fetchQuestions();
   }, []);
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
-  };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setSuccess('');
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/auth');
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      const response = await fetch(API_BASE_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Question add nahi ho paaya.');
-      }
-
-      setQuestions((current) => [data.data, ...current]);
-      setForm(initialForm);
-      setSuccess('Question added successfully.');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="flex h-screen bg-[#12161b] text-gray-300 font-sans overflow-hidden">
@@ -156,61 +112,7 @@ export default function PracticePage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
-            <section className="bg-[#2a2a2a] border border-gray-800 rounded-xl p-5 shadow-lg">
-              <p className="text-xl font-semibold mb-4 text-white">Add Question</p>
-
-              {(error || success) && (
-                <div className={`mb-4 p-3 rounded-lg border text-sm ${error ? 'bg-red-500/10 border-red-500/40 text-red-300' : 'bg-emerald-500/10 border-emerald-500/40 text-emerald-300'}`}>
-                  {error || success}
-                </div>
-              )}
-
-              <form className="space-y-4" onSubmit={handleSubmit}>
-                <input
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="Question title"
-                  required
-                  className="w-full bg-[#171c23] border border-[#222a35] rounded-lg px-4 py-3 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:border-[#40e0d0]/50 focus:ring-2 focus:ring-[#40e0d0]/10 transition-all"
-                />
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  placeholder="Description"
-                  rows="5"
-                  className="w-full bg-[#171c23] border border-[#222a35] rounded-lg px-4 py-3 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:border-[#40e0d0]/50 focus:ring-2 focus:ring-[#40e0d0]/10 transition-all resize-none"
-                />
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3">
-                  <select
-                    name="difficulty"
-                    value={form.difficulty}
-                    onChange={handleChange}
-                    className="w-full bg-[#171c23] border border-[#222a35] rounded-lg px-4 py-3 text-sm text-gray-100 focus:outline-none focus:border-[#40e0d0]/50 focus:ring-2 focus:ring-[#40e0d0]/10 transition-all"
-                  >
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
-                  </select>
-                  <input
-                    name="category"
-                    value={form.category}
-                    onChange={handleChange}
-                    placeholder="Category"
-                    className="w-full bg-[#171c23] border border-[#222a35] rounded-lg px-4 py-3 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:border-[#40e0d0]/50 focus:ring-2 focus:ring-[#40e0d0]/10 transition-all"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="w-full px-4 py-3 text-sm font-bold bg-[#40e0d0] hover:bg-[#3bc7b9] text-black rounded-lg transition-colors shadow-[0_4px_14px_0_rgba(64,224,208,0.2)] disabled:opacity-70 disabled:cursor-not-allowed"
-                >
-                  {isSaving ? 'Adding...' : 'Add Question'}
-                </button>
-              </form>
-            </section>
+          <div className="grid grid-cols-1 gap-6">
 
             <section className="bg-[#2a2a2a] border border-gray-800 rounded-xl p-5 shadow-lg">
               <p className="text-xl font-semibold mb-4 text-white">Question Bank</p>
