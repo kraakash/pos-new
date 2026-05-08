@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 
 const Roadmap = () => {
   const [ongoingPlans, setOngoingPlans] = useState([]);
@@ -42,14 +43,9 @@ const Roadmap = () => {
   return (
     <div className="flex h-screen bg-[#12161b] text-gray-300 font-sans overflow-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115] p-8 md:p-12 text-white">
-        <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Study Plan</h1>
-          <button className="bg-[#2a2a2a] text-sm px-4 py-2 rounded-md hover:bg-gray-700 transition font-medium">
-            My Study Plan &gt;&gt;
-          </button>
-        </div>
+      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115] text-white">
+        <TopBar title="Study Plan" subtitle="Roadmap" />
+        <div className="max-w-6xl mx-auto px-8 md:px-12 pb-12">
 
         {/* Ongoing Section */}
         {ongoingPlans.length > 0 && (

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/questions`;
 
@@ -82,21 +83,9 @@ export default function PracticePage() {
     <div className="flex h-screen bg-[#12161b] text-gray-300 font-sans overflow-hidden">
       <Sidebar />
 
-      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115] p-8 md:p-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-            <div>
-              <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-[#40e0d0] mb-2">Practice Library</p>
-              <h1 className="text-3xl font-bold text-white tracking-tight">Questions</h1>
-            </div>
-            <button
-              type="button"
-              onClick={fetchQuestions}
-              className="self-start md:self-auto bg-[#2a2a2a] text-sm px-4 py-2 rounded-md hover:bg-gray-700 transition font-medium text-white"
-            >
-              Refresh
-            </button>
-          </div>
+      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115]">
+        <TopBar title="Questions" subtitle="Practice Library" />
+        <div className="max-w-6xl mx-auto px-8 md:px-12 pb-12">
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             {[
