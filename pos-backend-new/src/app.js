@@ -7,6 +7,10 @@ const userRoutes = require("./routes/userRoutes");
 const questionRoutes = require("./routes/questionRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const codeRoutes = require("./routes/codeRoutes");
+const roadmapRoutes = require("./routes/roadmapRoutes");
+
+// Import models index to ensure all associations and table syncs are set up
+require("./models");
 
 const app = express();
 
@@ -21,7 +25,7 @@ app.use(morgan("dev"));
 app.get("/", (req, res) => {
   res.json({
     message: "POS backend API is running",
-  });
+  });9
 });
 
 app.get("/health", (req, res) => {
@@ -36,6 +40,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/questions", questionRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/code", codeRoutes);
+app.use("/api/roadmap", roadmapRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

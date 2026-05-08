@@ -5,6 +5,11 @@ const StudyPlanQuestion = require("./StudyPlanQuestion");
 const UserSolvedQuestion = require("./UserSolvedQuestion");
 const Submission = require("./Submission");
 
+// --- Roadmap Module Models ---
+const RoadmapProgress = require("./RoadmapProgress");
+const DailyMissionLog = require("./DailyMissionLog");
+const UserBadge = require("./UserBadge");
+
 // Define Associations
 
 // StudyPlan <-> Question (Many-to-Many via StudyPlanQuestion)
@@ -23,11 +28,28 @@ Submission.belongsTo(User, { foreignKey: 'userId' });
 Question.hasMany(Submission, { foreignKey: 'questionId' });
 Submission.belongsTo(Question, { foreignKey: 'questionId' });
 
+// --- Roadmap Associations ---
+// User -> RoadmapProgress (One-to-Many)
+User.hasMany(RoadmapProgress, { foreignKey: 'userId' });
+RoadmapProgress.belongsTo(User, { foreignKey: 'userId' });
+
+// User -> DailyMissionLog (One-to-Many)
+User.hasMany(DailyMissionLog, { foreignKey: 'userId' });
+DailyMissionLog.belongsTo(User, { foreignKey: 'userId' });
+
+// User -> UserBadge (One-to-Many)
+User.hasMany(UserBadge, { foreignKey: 'userId' });
+UserBadge.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   User,
   Question,
   StudyPlan,
   StudyPlanQuestion,
   UserSolvedQuestion,
-  Submission
+  Submission,
+  // Roadmap module
+  RoadmapProgress,
+  DailyMissionLog,
+  UserBadge,
 };
