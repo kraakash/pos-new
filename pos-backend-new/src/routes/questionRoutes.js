@@ -4,6 +4,13 @@ const { protect, optionalAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// Guard: only admin users can use destructive routes
+const isAdmin = (req, res, next) => {
+  const adminSecret = req.headers['x-admin-secret'];
+  if (adminSecret && adminSecret === process.env.ADMIN_SECRET) return next();
+  return res.status(403).json({ message: 'Forbidden: admin only' });
+};
+
 // @desc    Get all questions (for practice page)
 // @route   GET /api/questions
 // @access  Public (Optional Auth)
@@ -180,8 +187,8 @@ router.post("/", protect, async (req, res, next) => {
 
 // @desc    Seed demo questions (for testing)
 // @route   POST /api/questions/seed
-// @access  Private
-router.post("/seed", protect, async (req, res, next) => {
+// @access  Admin only (requires X-Admin-Secret header)
+router.post("/seed", protect, isAdmin, async (req, res, next) => {
   try {
     const existingCount = await Question.count();
     if (existingCount > 0) {
@@ -247,8 +254,8 @@ router.post("/seed", protect, async (req, res, next) => {
 
 // @desc    Clear all questions
 // @route   DELETE /api/questions/clear
-// @access  Private
-router.delete("/clear", protect, async (req, res, next) => {
+// @access  Admin only (requires X-Admin-Secret header)
+router.delete("/clear", protect, isAdmin, async (req, res, next) => {
   try {
     await Question.destroy({ where: {} });
     res.json({ message: "All questions have been deleted successfully." });
