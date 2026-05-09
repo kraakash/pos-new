@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import TopBar from './TopBar';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer,
   BarChart, Bar, Cell
@@ -40,9 +41,9 @@ export default function DashboardPage() {
       <Sidebar />
       
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115] p-8">
-        <h2 className="text-xl font-bold text-white mb-6 tracking-wide">Dashboard</h2>
-        
+      <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#12161b] to-[#0e1115]">
+        <TopBar title="Dashboard" />
+        <div className="px-8 pb-8">
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <div className="bg-[#171c23] border border-[#222a35] rounded-xl p-5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.3)]">
@@ -121,7 +122,7 @@ export default function DashboardPage() {
             <span className="text-sm font-semibold text-[#40e0d0]">12 pts</span>
           </div>
         </div>
-
+        </div>
       </main>
     </div>
   );

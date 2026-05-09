@@ -63,6 +63,9 @@ export default function AuthPage() {
       }
       // Save JWT token so the Dashboard can use it
       localStorage.setItem('token', data.token);
+      // Save user info for display in TopBar (no extra API call needed)
+      localStorage.setItem('userName', data.name || '');
+      localStorage.setItem('userEmail', data.email || '');
 
       // Instantly redirect to the Dashboard page!
       navigate('/dashboard');

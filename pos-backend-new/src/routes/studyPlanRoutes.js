@@ -4,6 +4,13 @@ const { protect, optionalAuth } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// Admin-only guard
+const isAdmin = (req, res, next) => {
+  const adminSecret = req.headers['x-admin-secret'];
+  if (adminSecret && adminSecret === process.env.ADMIN_SECRET) return next();
+  return res.status(403).json({ message: 'Forbidden: admin only' });
+};
+
 // @desc    Get all study plans (Featured)
 // @route   GET /api/study-plans
 // @access  Public (Optional Auth)
@@ -50,8 +57,8 @@ router.get("/", optionalAuth, async (req, res, next) => {
 
 // @desc    Seed demo study plans
 // @route   POST /api/study-plans/seed
-// @access  Private
-router.post("/seed", protect, async (req, res, next) => {
+// @access  Admin only
+router.post("/seed", protect, isAdmin, async (req, res, next) => {
   try {
     const existingCount = await StudyPlan.count();
     if (existingCount > 0) {

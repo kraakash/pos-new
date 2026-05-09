@@ -10,8 +10,11 @@ export default function Sidebar() {
   };
 
   const navClass = (path) => {
-    return location.pathname === path 
-      ? "block px-3 py-2.5 rounded-md bg-[#40e0d0]/10 text-[#40e0d0] text-sm font-medium" 
+    const isActive = path === '/roadmaps'
+      ? location.pathname.startsWith('/roadmaps')
+      : location.pathname === path;
+    return isActive
+      ? "block px-3 py-2.5 rounded-md bg-[#40e0d0]/10 text-[#40e0d0] text-sm font-medium"
       : "block px-3 py-2.5 rounded-md hover:bg-[#1a212b] text-gray-400 hover:text-gray-200 text-sm font-medium transition-colors";
   };
 
@@ -24,22 +27,13 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-4 mt-2 space-y-1">
         <Link to="/dashboard" className={navClass('/dashboard')}>Dashboard</Link>
-        <Link to="/roadmap" className={navClass('/roadmap')}>Roadmap</Link>
+        <Link to="/roadmaps" className={navClass('/roadmaps')}>Roadmaps</Link>
         <a href="#" className="block px-3 py-2.5 rounded-md hover:bg-[#1a212b] text-gray-400 hover:text-gray-200 text-sm font-medium transition-colors">Today's Experience</a>
         <Link to="/practice" className={navClass('/practice')}>Practice</Link>
         <a href="#" className="block px-3 py-2.5 rounded-md hover:bg-[#1a212b] text-gray-400 hover:text-gray-200 text-sm font-medium transition-colors">Resume Analyzer</a>
         <a href="#" className="block px-3 py-2.5 rounded-md hover:bg-[#1a212b] text-gray-400 hover:text-gray-200 text-sm font-medium transition-colors">Mock Interview</a>
       </nav>
 
-      <div className="p-4 border-t border-[#1e2532]">
-        <button
-          className="flex items-center gap-3 w-full hover:bg-[#1a212b] p-2 rounded-md transition-colors"
-          onClick={handleLogout}
-        >
-          <div className="w-8 h-8 rounded-full bg-[#12161b] border border-gray-600 flex items-center justify-center text-xs font-semibold text-[#40e0d0]">VK</div>
-          <span className="text-sm font-medium text-gray-400">Profile</span>
-        </button>
-      </div>
     </aside>
   );
 }
