@@ -1,6 +1,16 @@
 const express = require('express');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, optionalAuth } = require('../middleware/authMiddleware');
 const {
+  getRoadmap,
+  getPublicRoadmap,
+  getPublicSection,
+  generateRoadmap,
+  getSection,
+  getModule,
+  getRoadmapProgress,
+  updateRoadmap,
+
+  // Legacy
   getProgress,
   updateTopicStatus,
   syncProgress,
@@ -14,35 +24,29 @@ const {
 
 const router = express.Router();
 
-// All roadmap routes are protected — user must be logged in
-router.use(protect);
+// ── New Database-driven Layout Routes ────────────────────────────────────────
 
-// ── Summary (across all roadmaps) ────────────────────────────────────────────
-// GET /api/roadmap/summary
-router.get('/summary', getSummary);
+// Public / Optional Auth endpoints (guests can see public roadmap template)
+router.get('/', optionalAuth, getRoadmap);
+router.get('/public', getPublicRoadmap);
+router.get('/public/section/:id', getPublicSection);
 
-// ── Per-roadmap routes ────────────────────────────────────────────────────────
+// Protected endpoints
+router.post('/generate', protect, generateRoadmap);
+router.get('/section/:id', protect, getSection);
+router.get('/module/:id', protect, getModule);
+router.get('/progress', protect, getRoadmapProgress);
+router.post('/update', protect, updateRoadmap);
 
-// Progress
-// GET  /api/roadmap/:roadmapId/progress
-// POST /api/roadmap/:roadmapId/progress/sync  (bulk sync from localStorage)
-// POST /api/roadmap/:roadmapId/topic/:topicId (mark single topic done/undone)
-router.get('/:roadmapId/progress', getProgress);
-router.post('/:roadmapId/progress/sync', syncProgress);
-router.post('/:roadmapId/topic/:topicId', updateTopicStatus);
-
-// Daily Missions
-// GET   /api/roadmap/:roadmapId/daily
-// POST  /api/roadmap/:roadmapId/daily          (save/replace today's missions)
-// PATCH /api/roadmap/:roadmapId/daily/:missionId (toggle one mission)
-router.get('/:roadmapId/daily', getDailyMission);
-router.post('/:roadmapId/daily', saveDailyMission);
-router.patch('/:roadmapId/daily/:missionId', toggleMission);
-
-// Badges
-// GET  /api/roadmap/:roadmapId/badges
-// POST /api/roadmap/:roadmapId/badges/:badgeId (award a badge)
-router.get('/:roadmapId/badges', getBadges);
-router.post('/:roadmapId/badges/:badgeId', awardBadge);
+// ── Legacy / Compatibility Routes (Protected) ────────────────────────────────
+router.get('/summary', protect, getSummary);
+router.get('/:roadmapId/progress', protect, getProgress);
+router.post('/:roadmapId/progress/sync', protect, syncProgress);
+router.post('/:roadmapId/topic/:topicId', protect, updateTopicStatus);
+router.get('/:roadmapId/daily', protect, getDailyMission);
+router.post('/:roadmapId/daily', protect, saveDailyMission);
+router.patch('/:roadmapId/daily/:missionId', protect, toggleMission);
+router.get('/:roadmapId/badges', protect, getBadges);
+router.post('/:roadmapId/badges/:badgeId', protect, awardBadge);
 
 module.exports = router;

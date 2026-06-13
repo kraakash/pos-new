@@ -1,7 +1,7 @@
 import { ROADMAPS } from '../../roadmaps/index';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../../component/Sidebar';
-import TopBar from '../../component/TopBar';
+import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 import RoadmapCard from '../../components/roadmap/RoadmapCard';
 
 /**
