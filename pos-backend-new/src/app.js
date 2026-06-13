@@ -26,8 +26,8 @@ const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:5173,http:
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. curl, Postman) only in development
-    if (!origin && process.env.NODE_ENV !== "production") return callback(null, true);
+    // Allow requests with no origin (e.g. internal health checks, server-to-server)
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
