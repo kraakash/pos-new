@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 // Use the URL exactly as requested. Change port to 5000 if your server runs there instead.
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/users`;
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  const setUser = useAuthStore((s) => s.setUser);
   const [mode, setMode] = useState('login');
   
   // 1. State to capture user input
@@ -66,6 +68,14 @@ export default function AuthPage() {
       // Save user info for display in TopBar (no extra API call needed)
       localStorage.setItem('userName', data.name || '');
       localStorage.setItem('userEmail', data.email || '');
+      localStorage.setItem('userUsername', data.username || '');
+
+      // Set auth store user
+      setUser({
+        name: data.name,
+        email: data.email,
+        username: data.username,
+      });
 
       // Instantly redirect to the Dashboard page!
       navigate('/dashboard');

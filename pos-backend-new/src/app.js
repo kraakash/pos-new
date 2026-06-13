@@ -9,6 +9,7 @@ const questionRoutes = require("./routes/questionRoutes");
 const studyPlanRoutes = require("./routes/studyPlanRoutes");
 const codeRoutes = require("./routes/codeRoutes");
 const roadmapRoutes = require("./routes/roadmapRoutes");
+const interviewRoutes = require("./routes/interviewRoutes");
 
 // Import models index to ensure all associations and table syncs are set up
 require("./models");
@@ -76,6 +77,7 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/study-plans", studyPlanRoutes);
 app.use("/api/code", codeRoutes);
 app.use("/api/roadmap", roadmapRoutes);
+app.use("/api/interview", interviewRoutes);
 
 
 app.use((req, res) => {

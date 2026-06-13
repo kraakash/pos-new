@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../../component/Sidebar';
-import TopBar from '../../component/TopBar';
+import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 import { getRoadmap, getRoadmapStages } from '../../roadmaps/index';
 import { useRoadmapProgress } from '../../hooks/useRoadmapProgress';
 

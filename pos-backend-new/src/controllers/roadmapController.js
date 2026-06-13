@@ -1,4 +1,5 @@
 const { RoadmapProgress, DailyMissionLog, UserBadge } = require('../models');
+const roadmapService = require('../services/roadmapService');
 const { Op } = require('sequelize');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -7,10 +8,112 @@ const { Op } = require('sequelize');
 const todayString = () => new Date().toISOString().split('T')[0];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get all topic progress for a user in a roadmap
-// @route   GET /api/roadmap/:roadmapId/progress
-// @access  Private
+// NEW DATABASE-DRIVEN ROADMAP ENDPOINTS
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Get the active user's roadmap (or public roadmap if guest).
+ */
+const getRoadmap = async (req, res, next) => {
+  try {
+    if (req.user) {
+      res.json(await roadmapService.getRoadmap(req.user.id));
+    } else {
+      res.json(roadmapService.getPublicRoadmap());
+    }
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get public roadmap dashboard template.
+ */
+const getPublicRoadmap = async (req, res, next) => {
+  try {
+    res.json(roadmapService.getPublicRoadmap());
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get public section.
+ */
+const getPublicSection = async (req, res, next) => {
+  try {
+    res.json(roadmapService.getPublicSection(req.params.id));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Explicitly generate or regenerate user roadmap.
+ */
+const generateRoadmap = async (req, res, next) => {
+  try {
+    res.json(await roadmapService.generateRoadmap(req.user.id));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get user section detail.
+ */
+const getSection = async (req, res, next) => {
+  try {
+    res.json(await roadmapService.getSection(req.user.id, req.params.id));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get user module detail.
+ */
+const getModule = async (req, res, next) => {
+  try {
+    res.json(await roadmapService.getModule(req.user.id, req.params.id));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Get roadmap overall progress analytics.
+ */
+const getRoadmapProgress = async (req, res, next) => {
+  try {
+    res.json(await roadmapService.getRoadmapProgress(req.user.id));
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * Update module progress.
+ */
+const updateRoadmap = async (req, res, next) => {
+  try {
+    const { moduleId, type, verdict, timeTaken, pasteRatio } = req.body;
+    res.json(await roadmapService.updateRoadmap(req.user.id, {
+      moduleId,
+      type,
+      verdict,
+      timeTaken,
+      pasteRatio
+    }));
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LEGACY / COMPATIBILITY ROADMAP ENDPOINTS
+// ─────────────────────────────────────────────────────────────────────────────
+
 const getProgress = async (req, res, next) => {
   try {
     const { roadmapId } = req.params;
@@ -32,12 +135,6 @@ const getProgress = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Mark (or unmark) a topic as complete for a user
-// @route   POST /api/roadmap/:roadmapId/topic/:topicId
-// @body    { status: 'completed' | 'not_started' }
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const updateTopicStatus = async (req, res, next) => {
   try {
     const { roadmapId, topicId } = req.params;
@@ -49,7 +146,6 @@ const updateTopicStatus = async (req, res, next) => {
       return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
     }
 
-    // Upsert: create or update in one query (idempotent)
     const [row, created] = await RoadmapProgress.upsert(
       {
         userId,
@@ -77,12 +173,6 @@ const updateTopicStatus = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Bulk update multiple topics at once (for sync from localStorage)
-// @route   POST /api/roadmap/:roadmapId/progress/sync
-// @body    { progress: [{ topicId, status }] }
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const syncProgress = async (req, res, next) => {
   try {
     const { roadmapId } = req.params;
@@ -93,7 +183,6 @@ const syncProgress = async (req, res, next) => {
       return res.status(400).json({ message: 'progress must be a non-empty array' });
     }
 
-    // Upsert all at once
     const rows = progress.map(({ topicId, status = 'completed' }) => ({
       userId,
       roadmapId,
@@ -116,11 +205,6 @@ const syncProgress = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get today's daily mission log (or 404 if none yet)
-// @route   GET /api/roadmap/:roadmapId/daily
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const getDailyMission = async (req, res, next) => {
   try {
     const { roadmapId } = req.params;
@@ -132,7 +216,6 @@ const getDailyMission = async (req, res, next) => {
     });
 
     if (!log) {
-      // Return 200 with empty missions — frontend will generate and then save
       return res.json({ roadmapId, date: today, missions: [] });
     }
 
@@ -142,12 +225,6 @@ const getDailyMission = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Save or update today's daily missions
-// @route   POST /api/roadmap/:roadmapId/daily
-// @body    { missions: [...] }
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const saveDailyMission = async (req, res, next) => {
   try {
     const { roadmapId } = req.params;
@@ -170,12 +247,6 @@ const saveDailyMission = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Toggle a single mission's completed status inside today's log
-// @route   PATCH /api/roadmap/:roadmapId/daily/:missionId
-// @body    { completed: true | false }
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const toggleMission = async (req, res, next) => {
   try {
     const { roadmapId, missionId } = req.params;
@@ -191,7 +262,6 @@ const toggleMission = async (req, res, next) => {
       return res.status(404).json({ message: 'No daily mission log found for today' });
     }
 
-    // Update the specific mission inside the JSONB array
     const updated = log.missions.map((m) =>
       m.id === missionId ? { ...m, completed: !!completed } : m
     );
@@ -204,11 +274,6 @@ const toggleMission = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get all badges earned by user in a roadmap
-// @route   GET /api/roadmap/:roadmapId/badges
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const getBadges = async (req, res, next) => {
   try {
     const { roadmapId } = req.params;
@@ -226,11 +291,6 @@ const getBadges = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Award a badge to a user (called automatically or manually)
-// @route   POST /api/roadmap/:roadmapId/badges/:badgeId
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const awardBadge = async (req, res, next) => {
   try {
     const { roadmapId, badgeId } = req.params;
@@ -252,16 +312,10 @@ const awardBadge = async (req, res, next) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get summary stats across ALL roadmaps for a user (for dashboard)
-// @route   GET /api/roadmap/summary
-// @access  Private
-// ─────────────────────────────────────────────────────────────────────────────
 const getSummary = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // Count completed topics per roadmap
     const progressRows = await RoadmapProgress.findAll({
       where: { userId, status: 'completed' },
       attributes: ['roadmapId'],
@@ -272,7 +326,6 @@ const getSummary = async (req, res, next) => {
       countByRoadmap[roadmapId] = (countByRoadmap[roadmapId] || 0) + 1;
     });
 
-    // Count badges per roadmap
     const badgeRows = await UserBadge.findAll({
       where: { userId },
       attributes: ['roadmapId'],
@@ -294,6 +347,17 @@ const getSummary = async (req, res, next) => {
 };
 
 module.exports = {
+  // New API
+  getRoadmap,
+  getPublicRoadmap,
+  getPublicSection,
+  generateRoadmap,
+  getSection,
+  getModule,
+  getRoadmapProgress,
+  updateRoadmap,
+
+  // Legacy API
   getProgress,
   updateTopicStatus,
   syncProgress,

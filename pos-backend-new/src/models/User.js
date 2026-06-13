@@ -21,6 +21,78 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    username: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: true,
+    },
+    branch: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    year: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 1,
+    },
+    skillLevel: {
+      type: DataTypes.ENUM("BEGINNER", "INTERMEDIATE", "ADVANCED"),
+      allowNull: true,
+      defaultValue: "BEGINNER",
+    },
+    placementGoal: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    contactNo: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    linkedinUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    githubUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    collegeName: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    leetcodeUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    codeforcesUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    codechefUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    hackerrankUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    readinessScore: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      defaultValue: 0,
+    },
+    weakTopics: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
+    targetCompanies: {
+      type: DataTypes.JSON,
+      allowNull: true,
+    },
   },
   {
     timestamps: true,

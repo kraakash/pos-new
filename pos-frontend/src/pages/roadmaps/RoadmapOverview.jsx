@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import Sidebar from '../../component/Sidebar';
-import TopBar from '../../component/TopBar';
+import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 import StageCard from '../../components/roadmap/StageCard';
 import ReadinessGauge from '../../components/roadmap/ReadinessGauge';
 import BadgeCard from '../../components/roadmap/BadgeCard';
